@@ -1,39 +1,49 @@
-def welcome_assignment_answers(question):
+from socket import *
+import sys
 
-    if question == "In Slack, what is the secret passphrase posted in the #lab-python-getting-started channel posted by a TA?":
-        answer = "pcap"
+def webServer(port=13331):
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
-    elif question == "Are encoding and encryption the same? - Yes/No":
-        answer = "No"
+    serverSocket.bind(("", port))
+    serverSocket.listen(1)
 
-    elif question == "Is it possible to decrypt a message without a key? - Yes/No":
-        answer = "No"
+    while True:
+        connectionSocket, addr = serverSocket.accept()
 
-    elif question == "Is it possible to decode a message without a key? - Yes/No":
-        answer = "Yes"
+        try:
+            message = connectionSocket.recv(1024).decode()
+            filename = message.split()[1]
 
-    elif question == "Is a hashed message supposed to be un-hashed? - Yes/No":
-        answer = "No"
+            with open(filename[1:], "rb") as f:
+                body = f.read()
 
-    elif question == "What is the SHA256 hashing value of your NYU email and use the answer in your code - ":
-        answer = "d830a5c57096088f58cef0786ea566eceab2ef3a7e50cdb4c5c64551dafaee4a"
+            header = (
+                "HTTP/1.1 200 OK\r\n"
+                "Server: DanielWebServer\r\n"
+                "Content-Type: text/html; charset=UTF-8\r\n"
+                f"Content-Length: {len(body)}\r\n"
+                "Connection: close\r\n"
+                "\r\n"
+            ).encode()
 
-    elif question == "Is MD5 a secured hashing algorithm? - Yes/No":
-        answer = "No"
+            connectionSocket.sendall(header + body)
+            connectionSocket.close()
 
-    elif question == "What layer of the TCP/IP model does the protocol DNS belong to? - The answer should be an integer number":
-        answer = 5
+        except Exception:
+            body = b"<html><body><h1>404 Not Found</h1></body></html>"
 
-    elif question == "What layer of the TCP/IP model does the protocol ICMP belong to? - The answer should be an integer number":
-        answer = 3
+            header = (
+                "HTTP/1.1 404 Not Found\r\n"
+                "Server: DanielWebServer\r\n"
+                "Content-Type: text/html; charset=UTF-8\r\n"
+                f"Content-Length: {len(body)}\r\n"
+                "Connection: close\r\n"
+                "\r\n"
+            ).encode()
 
-    else:
-        answer = "This is not my beautiful wife! This is not my beautiful car! How did I get here?"
-
-    return(answer)
-
+            connectionSocket.sendall(header + body)
+            connectionSocket.close()
 
 if __name__ == "__main__":
-
-    debug_question = "Are encoding and encryption the same? - Yes/No"
-    print(welcome_assignment_answers(debug_question))
+    webServer(13331)
